@@ -7,64 +7,45 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct TodayView: View {
-    @State private var habits: [Habit] = [
-        Habit(title: "Drink Water", progress: 0.0),
-        Habit(title: "Read 20 pages", progress: 0.0),
-        Habit(title: "Workout", progress: 0.0)
-    ]
+    @Environment(\.managedObjectContext) private var ctx
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Habit.createdAt, ascending: true)],
+        predicate: NSPredicate(format: "isArchived == NO")
+    )
+    private var habits: FetchedResults<Habit>
+    
+    @StateObject private var dataManager = SharedDataManager.shared
     @State private var showNew = false
 
     var body: some View {
         NavigationStack {
-            List {
+            VStack {
                 if habits.isEmpty {
-                    ContentUnavailableView(
-                        "No habits yet",
-                        systemImage: "list.bullet.rectangle",
-                        description: Text("Tap + to add your first habit.")
-                    )
-                } else {
-                    ForEach($habits) { $habit in
-                        HStack {
-                     
-                            Button {
-                                habit.progress = habit.progress >= 1 ? 0 : 1
-                            } label: {
-                                Image(systemName: habit.progress >= 1 ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 26))
-                                    .foregroundStyle(habit.progress >= 1 ? .green : .gray.opacity(0.6))
-                                    .animation(.spring(response: 0.3), value: habit.progress)
-                            }
-                            .buttonStyle(.plain)
-
-                            VStack(alignment: .leading) {
-                                Text(habit.title)
-                                    .font(.headline)
-                                if habit.progress >= 1 {
-                                    Text("Completed today")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    Text("Tap to complete")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                           
-                            if habit.progress >= 1 {
-                                Text("🔥")
-                                    .font(.title3)
-                                    .transition(.scale)
-                            }
-                        }
-                        .padding(.vertical, 4)
+                    VStack(spacing: 20) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                        
+                        Text("No habits yet")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("Tap the + button to create your first habit")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                    .onDelete { idx in habits.remove(atOffsets: idx) }
+                    .padding()
+                } else {
+                    List {
+                        ForEach(habits) { habit in
+                            HabitRow(habit: habit)
+                        }
+                        .onDelete(perform: deleteHabit)
+                    }
                 }
             }
             .animation(.easeInOut, value: habits)
@@ -78,11 +59,19 @@ struct TodayView: View {
             }
             .sheet(isPresented: $showNew) {
                 NavigationStack {
-                    HabitEditView { newHabit in
-                        habits.append(newHabit)
-                    }
+                    HabitEditView()
                 }
             }
+        }
+    }
+
+    private func deleteHabit(at offsets: IndexSet) {
+        withAnimation {
+            offsets.map { habits[$0] }.forEach { habit in
+                // Archive instead of delete
+                habit.isArchived = true
+            }
+            try? ctx.save()
         }
     }
 }
