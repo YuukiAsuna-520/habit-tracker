@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct HabitWidgetControl: ControlWidget {
-    static let kind: String = "com.Tingxuan.Zhang.HabitTracker.HabitWidget"
+    static let kind: String = "com.soorya.sanand.HabitTracker.HabitWidget"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(
@@ -18,60 +18,62 @@ struct HabitWidgetControl: ControlWidget {
             provider: Provider()
         ) { value in
             ControlWidgetToggle(
-                "Start Timer",
-                isOn: value.isRunning,
-                action: StartTimerIntent(value.name)
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+                "Complete Habit",
+                isOn: value.isCompleted,
+                action: ToggleHabitIntent(value.habitName)
+            ) { isCompleted in
+                Label(isCompleted ? "Done" : "Pending", systemImage: isCompleted ? "checkmark.circle.fill" : "circle")
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
+        .displayName("Habit Tracker")
+        .description("Mark your habit as complete")
     }
 }
 
 extension HabitWidgetControl {
     struct Value {
-        var isRunning: Bool
-        var name: String
+        var isCompleted: Bool
+        var habitName: String
     }
 
     struct Provider: AppIntentControlValueProvider {
-        func previewValue(configuration: TimerConfiguration) -> Value {
-            HabitWidgetControl.Value(isRunning: false, name: configuration.timerName)
+        func previewValue(configuration: HabitConfiguration) -> Value {
+            HabitWidgetControl.Value(isCompleted: false, habitName: configuration.habitName)
         }
 
-        func currentValue(configuration: TimerConfiguration) async throws -> Value {
-            let isRunning = true // Check if the timer is running
-            return HabitWidgetControl.Value(isRunning: isRunning, name: configuration.timerName)
+        func currentValue(configuration: HabitConfiguration) async throws -> Value {
+            // Check if the habit is completed for today
+            let isCompleted = false // This would check against your Core Data
+            return HabitWidgetControl.Value(isCompleted: isCompleted, habitName: configuration.habitName)
         }
     }
 }
 
-struct TimerConfiguration: ControlConfigurationIntent {
-    static let title: LocalizedStringResource = "Timer Name Configuration"
+struct HabitConfiguration: ControlConfigurationIntent {
+    static let title: LocalizedStringResource = "Habit Configuration"
 
-    @Parameter(title: "Timer Name", default: "Timer")
-    var timerName: String
+    @Parameter(title: "Habit Name", default: "Daily Habit")
+    var habitName: String
 }
 
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
+struct ToggleHabitIntent: SetValueIntent {
+    static let title: LocalizedStringResource = "Toggle habit completion"
 
-    @Parameter(title: "Timer Name")
-    var name: String
+    @Parameter(title: "Habit Name")
+    var habitName: String
 
-    @Parameter(title: "Timer is running")
+    @Parameter(title: "Habit is completed")
     var value: Bool
 
     init() {}
 
-    init(_ name: String) {
-        self.name = name
+    init(_ habitName: String) {
+        self.habitName = habitName
     }
 
     func perform() async throws -> some IntentResult {
-        // Start the timer…
+        // Toggle habit completion in Core Data
+        // This would integrate with your SharedDataManager
         return .result()
     }
 }
