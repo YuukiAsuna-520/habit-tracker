@@ -43,17 +43,15 @@ class NotificationManager: ObservableObject {
         
         let habits = dataManager.fetchActiveHabits()
         
-        if dataManager.isGlobalReminderEnabled, let globalTime = dataManager.globalReminderTime {
-            // Schedule global reminder for all habits
-            scheduleGlobalReminder(for: habits, at: globalTime)
-        } else {
-            // Schedule individual reminders for habits that have them
-            for habit in habits {
-                if !habit.hasGlobalReminder, let reminderTime = habit.reminderTime {
-                    scheduleIndividualReminder(for: habit, at: reminderTime)
-                }
+        // Schedule individual reminders for habits that have them
+        for habit in habits {
+            if let reminderTime = habit.reminderTime {
+                scheduleIndividualReminder(for: habit, at: reminderTime)
             }
         }
+        
+        // Schedule the evening completion reminder
+        scheduleEveningCompletionReminder()
     }
     
     private func scheduleGlobalReminder(for habits: [Habit], at time: Date) {
@@ -76,7 +74,7 @@ class NotificationManager: ObservableObject {
         }
     }
     
-    private func scheduleIndividualReminder(for habit: Habit, at time: Date) {
+    func scheduleIndividualReminder(for habit: Habit, at time: Date) {
         let calendar = Calendar.current
         let components = calendar.dateComponents([.hour, .minute], from: time)
         
@@ -93,6 +91,43 @@ class NotificationManager: ObservableObject {
         notificationCenter.add(request) { error in
             if let error = error {
                 print("Error scheduling individual reminder: \(error)")
+            }
+        }
+    }
+    
+    private func scheduleEveningCompletionReminder() {
+        // Only schedule if evening reminders are enabled
+        guard dataManager.isEveningReminderEnabled else { return }
+        
+        // Cancel any existing evening reminder
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: ["evening_completion_reminder"])
+        
+        let calendar = Calendar.current
+        let eveningTime = dataManager.eveningReminderTime
+        let components = calendar.dateComponents([.hour, .minute], from: eveningTime)
+        
+        let content = UNMutableNotificationContent()
+        content.title = "Complete All Tasks"
+        
+        // Check how many habits are incomplete
+        let incompleteHabits = dataManager.getIncompleteHabitsForToday()
+        if incompleteHabits.count == 1 {
+            content.body = "You have 1 incomplete habit: \(incompleteHabits.first?.tittle ?? "your habit")"
+        } else if incompleteHabits.count > 1 {
+            content.body = "You have \(incompleteHabits.count) incomplete habits for today. Don't forget to finish them!"
+        } else {
+            content.body = "Great job! All your habits are completed for today. Keep it up!"
+        }
+        
+        content.sound = .default
+        content.categoryIdentifier = "EVENING_REMINDER"
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        let request = UNNotificationRequest(identifier: "evening_completion_reminder", content: content, trigger: trigger)
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("Error scheduling evening completion reminder: \(error)")
             }
         }
     }
@@ -121,14 +156,27 @@ class NotificationManager: ObservableObject {
             options: []
         )
         
-        let category = UNNotificationCategory(
+        let habitCategory = UNNotificationCategory(
             identifier: "HABIT_REMINDER",
             actions: [markDoneAction, snoozeAction],
             intentIdentifiers: [],
             options: []
         )
         
-        notificationCenter.setNotificationCategories([category])
+        let openAppAction = UNNotificationAction(
+            identifier: "OPEN_APP",
+            title: "Open App",
+            options: [.foreground]
+        )
+        
+        let eveningCategory = UNNotificationCategory(
+            identifier: "EVENING_REMINDER",
+            actions: [openAppAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        
+        notificationCenter.setNotificationCategories([habitCategory, eveningCategory])
     }
     
     // MARK: - Handle Notification Actions
@@ -147,6 +195,9 @@ class NotificationManager: ObservableObject {
                let habitId = UUID(uuidString: habitIdString) {
                 snoozeHabitReminder(habitId: habitId)
             }
+        case "OPEN_APP":
+            // The app will open automatically when the user taps this action
+            break
         default:
             break
         }

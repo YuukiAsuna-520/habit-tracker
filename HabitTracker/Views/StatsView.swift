@@ -124,7 +124,7 @@ struct HabitStatsCard: View {
     }
     
     private func calculateCompletionRate() -> Double {
-        guard let completionDates = habit.completionDates,
+        guard let completionDates = habit.completionDates as? [Date],
               !completionDates.isEmpty else { return 0.0 }
         
         let calendar = Calendar.current

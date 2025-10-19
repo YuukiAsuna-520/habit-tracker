@@ -17,7 +17,7 @@ struct HabitEditView: View {
     @State private var habitTitle = ""
     @State private var hasIndividualReminder = false
     @State private var reminderTime = Date()
-    @State private var isGlobalReminder = true
+    @State private var isSaving = false
     
     let habit: Habit?
     
@@ -26,7 +26,7 @@ struct HabitEditView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section("Habit Details") {
                     TextField("Habit name", text: $habitTitle)
@@ -34,17 +34,11 @@ struct HabitEditView: View {
                 }
                 
                 Section("Reminder Settings") {
-                    Toggle("Use global reminder time", isOn: $isGlobalReminder)
-                        .onChange(of: isGlobalReminder) { _, newValue in
-                            hasIndividualReminder = !newValue
-                        }
+                    Toggle("Enable reminder for this habit", isOn: $hasIndividualReminder)
                     
-                    if !isGlobalReminder {
-                        Toggle("Set individual reminder", isOn: $hasIndividualReminder)
-                        
-                        if hasIndividualReminder {
-                            DatePicker("Reminder time", selection: $reminderTime, displayedComponents: .hourAndMinute)
-                        }
+                    if hasIndividualReminder {
+                        DatePicker("Reminder time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(WheelDatePickerStyle())
                     }
                 }
             }
@@ -61,7 +55,7 @@ struct HabitEditView: View {
                     Button("Save") {
                         saveHabit()
                     }
-                    .disabled(habitTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(habitTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
         }
@@ -73,21 +67,31 @@ struct HabitEditView: View {
     private func setupInitialValues() {
         if let habit = habit {
             habitTitle = habit.tittle ?? ""
-            isGlobalReminder = habit.hasGlobalReminder
-            hasIndividualReminder = !habit.hasGlobalReminder && habit.reminderTime != nil
+            hasIndividualReminder = habit.reminderTime != nil
             if let reminderTime = habit.reminderTime {
                 self.reminderTime = reminderTime
             }
         } else {
             // Default values for new habit
-            isGlobalReminder = dataManager.isGlobalReminderEnabled
             hasIndividualReminder = false
+            // Set default reminder time to 9 AM
+            let calendar = Calendar.current
+            var components = DateComponents()
+            components.hour = 9
+            components.minute = 0
+            reminderTime = calendar.date(from: components) ?? Date()
         }
     }
     
     private func saveHabit() {
+        guard !isSaving else { return }
+        isSaving = true
+        
         let trimmedTitle = habitTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTitle.isEmpty else { return }
+        guard !trimmedTitle.isEmpty else { 
+            isSaving = false
+            return 
+        }
         
         let habitToSave: Habit
         if let existingHabit = habit {
@@ -99,26 +103,40 @@ struct HabitEditView: View {
         }
         
         habitToSave.tittle = trimmedTitle
-        habitToSave.hasGlobalReminder = isGlobalReminder
         
-        if isGlobalReminder {
-            habitToSave.reminderTime = nil
-        } else if hasIndividualReminder {
+        // Set individual reminder time if enabled
+        if hasIndividualReminder {
             habitToSave.reminderTime = reminderTime
+            habitToSave.hasGlobalReminder = false
         } else {
             habitToSave.reminderTime = nil
+            habitToSave.hasGlobalReminder = false
         }
         
         do {
             try viewContext.save()
             
-            // Schedule notifications
-            notificationManager.scheduleHabitReminders()
+            // Schedule notifications for this specific habit
+            if hasIndividualReminder {
+                // Request notification permission first
+                Task {
+                    let granted = await notificationManager.requestNotificationPermission()
+                    if granted {
+                        notificationManager.scheduleIndividualReminder(for: habitToSave, at: reminderTime)
+                    } else {
+                        print("Notification permission denied")
+                    }
+                }
+            } else {
+                notificationManager.cancelNotification(for: habitToSave)
+            }
             
             dismiss()
         } catch {
             print("Error saving habit: \(error)")
         }
+        
+        isSaving = false
     }
 }
 

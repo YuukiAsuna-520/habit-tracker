@@ -67,30 +67,30 @@ class SharedDataManager: ObservableObject {
     }
     
     func markHabitComplete(_ habit: Habit, for date: Date = Date()) {
-        var completionDates = habit.completionDates ?? []
+        var completionDates = (habit.completionDates as? [Date]) ?? []
         let calendar = Calendar.current
         let normalizedDate = calendar.startOfDay(for: date)
         
         // Check if already completed for this date
         if !completionDates.contains(where: { calendar.isDate($0, inSameDayAs: normalizedDate) }) {
             completionDates.append(normalizedDate)
-            habit.completionDates = completionDates
+            habit.completionDates = completionDates as NSObject as NSObject
             save()
         }
     }
     
     func markHabitIncomplete(_ habit: Habit, for date: Date = Date()) {
-        var completionDates = habit.completionDates ?? []
+        var completionDates = (habit.completionDates as? [Date]) ?? []
         let calendar = Calendar.current
         let normalizedDate = calendar.startOfDay(for: date)
         
         completionDates.removeAll { calendar.isDate($0, inSameDayAs: normalizedDate) }
-        habit.completionDates = completionDates
+        habit.completionDates = completionDates as NSObject
         save()
     }
     
     func isHabitCompleted(_ habit: Habit, for date: Date = Date()) -> Bool {
-        guard let completionDates = habit.completionDates else { return false }
+        guard let completionDates = habit.completionDates as? [Date] else { return false }
         let calendar = Calendar.current
         let normalizedDate = calendar.startOfDay(for: date)
         
@@ -98,7 +98,7 @@ class SharedDataManager: ObservableObject {
     }
     
     func getHabitStreak(_ habit: Habit) -> Int {
-        guard let completionDates = habit.completionDates else { return 0 }
+        guard let completionDates = habit.completionDates as? [Date] else { return 0 }
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
@@ -135,5 +135,52 @@ class SharedDataManager: ObservableObject {
         set {
             userDefaults.set(newValue, forKey: "isGlobalReminderEnabled")
         }
+    }
+    
+    var isEveningReminderEnabled: Bool {
+        get {
+            // Check if this is the first time accessing this setting
+            if userDefaults.object(forKey: "isEveningReminderEnabled") == nil {
+                // First time - enable evening reminders by default
+                userDefaults.set(true, forKey: "isEveningReminderEnabled")
+                return true
+            }
+            return userDefaults.bool(forKey: "isEveningReminderEnabled")
+        }
+        set {
+            userDefaults.set(newValue, forKey: "isEveningReminderEnabled")
+        }
+    }
+    
+    var eveningReminderTime: Date {
+        get {
+            if let time = userDefaults.object(forKey: "eveningReminderTime") as? Date {
+                return time
+            }
+            // Default to 9 PM
+            let calendar = Calendar.current
+            var components = DateComponents()
+            components.hour = 21
+            components.minute = 0
+            return calendar.date(from: components) ?? Date()
+        }
+        set {
+            userDefaults.set(newValue, forKey: "eveningReminderTime")
+        }
+    }
+    
+    // MARK: - Incomplete Habits Tracking
+    
+    func getIncompleteHabitsForToday() -> [Habit] {
+        let habits = fetchActiveHabits()
+        return habits.filter { !isHabitCompleted($0) }
+    }
+    
+    func getCompletionRateForToday() -> Double {
+        let habits = fetchActiveHabits()
+        guard !habits.isEmpty else { return 1.0 }
+        
+        let completedCount = habits.filter { isHabitCompleted($0) }.count
+        return Double(completedCount) / Double(habits.count)
     }
 }

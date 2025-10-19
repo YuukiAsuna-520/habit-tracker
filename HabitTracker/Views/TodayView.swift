@@ -48,7 +48,7 @@ struct TodayView: View {
                     }
                 }
             }
-            .animation(.easeInOut, value: habits)
+            .animation(.easeInOut, value: habits.count)
             .navigationTitle("Today")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

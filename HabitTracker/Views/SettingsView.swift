@@ -11,29 +11,29 @@ struct SettingsView: View {
     @StateObject private var dataManager = SharedDataManager.shared
     @StateObject private var notificationManager = NotificationManager.shared
     
-    @State private var isGlobalReminderEnabled = false
-    @State private var globalReminderTime = Date()
+    @State private var isEveningReminderEnabled = false
+    @State private var eveningReminderTime = Date()
     @State private var showingPermissionAlert = false
     
     var body: some View {
         NavigationView {
             Form {
-                Section("Notifications") {
-                    Toggle("Enable Daily Reminders", isOn: $isGlobalReminderEnabled)
-                        .onChange(of: isGlobalReminderEnabled) { _, newValue in
+                Section("Daily Completion Reminder") {
+                    Toggle("Enable Daily Completion Reminder", isOn: $isEveningReminderEnabled)
+                        .onChange(of: isEveningReminderEnabled) { _, newValue in
                             if newValue {
                                 requestNotificationPermission()
                             } else {
-                                dataManager.isGlobalReminderEnabled = false
-                                notificationManager.cancelAllHabitNotifications()
+                                dataManager.isEveningReminderEnabled = false
+                                notificationManager.scheduleHabitReminders()
                             }
                         }
                     
-                    if isGlobalReminderEnabled {
-                        DatePicker("Reminder Time", selection: $globalReminderTime, displayedComponents: .hourAndMinute)
-                            .onChange(of: globalReminderTime) { _, newValue in
-                                dataManager.globalReminderTime = newValue
-                                dataManager.isGlobalReminderEnabled = true
+                    if isEveningReminderEnabled {
+                        DatePicker("Reminder Time", selection: $eveningReminderTime, displayedComponents: .hourAndMinute)
+                            .onChange(of: eveningReminderTime) { _, newValue in
+                                dataManager.eveningReminderTime = newValue
+                                dataManager.isEveningReminderEnabled = true
                                 notificationManager.scheduleHabitReminders()
                             }
                     }
@@ -45,14 +45,6 @@ struct SettingsView: View {
                         Spacer()
                         Text("1.0.0")
                             .foregroundColor(.secondary)
-                    }
-                    
-                    HStack {
-                        Text("App Group")
-                        Spacer()
-                        Text("group.com.Tingxuan.Zhang.HabitTracker")
-                            .foregroundColor(.secondary)
-                            .font(.caption)
                     }
                 }
             }
@@ -66,9 +58,7 @@ struct SettingsView: View {
                         UIApplication.shared.open(settingsUrl)
                     }
                 }
-                Button("Cancel", role: .cancel) {
-                    isGlobalReminderEnabled = false
-                }
+                Button("Cancel", role: .cancel) { }
             } message: {
                 Text("Please enable notifications in Settings to receive habit reminders.")
             }
@@ -76,20 +66,25 @@ struct SettingsView: View {
     }
     
     private func loadSettings() {
-        isGlobalReminderEnabled = dataManager.isGlobalReminderEnabled
-        globalReminderTime = dataManager.globalReminderTime ?? Date()
+        isEveningReminderEnabled = dataManager.isEveningReminderEnabled
+        eveningReminderTime = dataManager.eveningReminderTime
     }
     
     private func requestNotificationPermission() {
         Task {
             let granted = await notificationManager.requestNotificationPermission()
             if granted {
-                dataManager.isGlobalReminderEnabled = true
-                dataManager.globalReminderTime = globalReminderTime
+                // Update the settings that were just enabled
+                if isEveningReminderEnabled {
+                    dataManager.isEveningReminderEnabled = true
+                    dataManager.eveningReminderTime = eveningReminderTime
+                }
                 notificationManager.setupNotificationCategories()
                 notificationManager.scheduleHabitReminders()
             } else {
                 await MainActor.run {
+                    // Reset the toggles if permission was denied
+                    isEveningReminderEnabled = false
                     showingPermissionAlert = true
                 }
             }
