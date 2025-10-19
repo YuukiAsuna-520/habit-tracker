@@ -22,6 +22,14 @@ struct PersistenceController {
 
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "HabitTracker") // 必须与 .xcdatamodeld 文件名一致
+        
+        // Configure for App Group sharing
+        if container.persistentStoreDescriptions.first?.url != nil {
+            let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.soorya.sanand.HabitTracker")
+            let sharedURL = appGroupURL?.appendingPathComponent("HabitTracker.sqlite")
+            container.persistentStoreDescriptions.first?.url = sharedURL
+        }
+        
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         }

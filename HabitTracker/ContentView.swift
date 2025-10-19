@@ -9,16 +9,26 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.managedObjectContext) private var viewContext
+
     var body: some View {
         TabView {
             TodayView()
                 .tabItem {
-                    Label("Today", systemImage: "checkmark.circle.fill")
+                    Image(systemName: "checkmark.circle")
+                    Text("Today")
                 }
-
+            
             StatsView()
                 .tabItem {
-                    Label("Stats", systemImage: "chart.bar.fill")
+                    Image(systemName: "chart.bar")
+                    Text("Stats")
+                }
+            
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gear")
+                    Text("Settings")
                 }
         }
     }
