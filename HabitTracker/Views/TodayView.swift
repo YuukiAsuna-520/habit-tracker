@@ -70,6 +70,7 @@ struct TodayView: View {
                     Button { showNew = true } label: {
                         Image(systemName: "plus.circle.fill")
                     }
+                    .accessibilityIdentifier("addHabitButton")
                 }
             }
             .sheet(isPresented: $showNew) {

@@ -10,32 +10,57 @@ import XCTest
 final class HabitTrackerUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testCreateEditDeleteHabitFlow() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
+        // 1) create a new one
+        app.buttons["addHabitButton"].tap()
+        let nameField = app.textFields["habitNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+        nameField.tap()
+        nameField.typeText("Read Book")
+        app.buttons["saveHabitButton"].tap()
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
+        // should appear in the list
+        XCTAssertTrue(app.staticTexts["Read Book"].waitForExistence(timeout: 2))
+
+        // 2) Edit（swap left → Edit）
+        let cellLabel = app.staticTexts["Read Book"]
+        cellLabel.swipeLeft()
+        app.buttons["Edit"].tap()
+
+        let nameField2 = app.textFields["habitNameField"]
+        XCTAssertTrue(nameField2.waitForExistence(timeout: 2))
+        nameField2.tap()
+        nameField2.clearAndType("Read Novel")
+        app.buttons["saveHabitButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["Read Novel"].waitForExistence(timeout: 2))
+
+        // 3) Delete（swap left → Delete）
+        let edited = app.staticTexts["Read Novel"]
+        edited.swipeLeft()
+        app.buttons["Delete"].tap()
+
+        // won't appear
+        XCTAssertFalse(edited.waitForExistence(timeout: 1.5))
+    }
+}
+
+// delete input
+private extension XCUIElement {
+    func clearAndType(_ text: String) {
+        guard self.exists, self.isHittable else { return }
+        self.tap()
+        if let value = self.value as? String {
+            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count)
+            self.typeText(deleteString)
         }
+        self.typeText(text)
     }
 }
