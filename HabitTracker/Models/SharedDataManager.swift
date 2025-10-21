@@ -74,7 +74,7 @@ class SharedDataManager: ObservableObject {
         // Check if already completed for this date
         if !completionDates.contains(where: { calendar.isDate($0, inSameDayAs: normalizedDate) }) {
             completionDates.append(normalizedDate)
-            habit.completionDates = completionDates as NSObject as NSObject
+            habit.completionDates = completionDates as NSObject
             save()
         }
     }
