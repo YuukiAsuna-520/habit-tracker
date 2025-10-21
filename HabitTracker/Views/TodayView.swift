@@ -3,7 +3,7 @@
 //  TodayView.swift
 //  HabitTracker
 //
-//  Created by Yash Patil on 17/10/2025.
+//  Created by Yash Patil and Tingxuan Zhang on 17/10/2025.
 //
 
 import SwiftUI
@@ -21,7 +21,7 @@ struct TodayView: View {
     @State private var showNew = false
 
     @State private var showEdit = false
-    @State private var editingHabit: Habit?
+    @State private var editingHabit: Habit? = nil
     
     var body: some View {
         NavigationStack {
@@ -90,5 +90,7 @@ struct TodayView: View {
             habit.isArchived = true
             try? ctx.save()
         }
+        NotificationManager.shared.cancelNotification(for: habit)
+        NotificationManager.shared.scheduleHabitReminders()
     }
 }
