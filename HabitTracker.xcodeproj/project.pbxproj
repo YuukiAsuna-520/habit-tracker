@@ -60,6 +60,7 @@
 		A363BD872E9F48A100B90AE4 /* HabitTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A363BD912E9F48A100B90AE4 /* HabitTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A363BE792EA75E8000B90AE4 /* HabitTrackerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HabitTrackerWidgetExtension.entitlements; sourceTree = "<group>"; };
+		A363BF502EA833D000B90AE4 /* HabitTracker.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = HabitTracker.xctestplan; sourceTree = "<group>"; };
 		E24922502EA2F4D600524ADD /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 		E24922522EA2F4DB00524ADD /* Charts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Charts.framework; path = System/Library/Frameworks/Charts.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -139,6 +140,7 @@
 		A363BD6C2E9F48A000B90AE4 = {
 			isa = PBXGroup;
 			children = (
+				A363BF502EA833D000B90AE4 /* HabitTracker.xctestplan */,
 				A363BE792EA75E8000B90AE4 /* HabitTrackerWidgetExtension.entitlements */,
 				A363BD772E9F48A000B90AE4 /* HabitTracker */,
 				A363BD8A2E9F48A100B90AE4 /* HabitTrackerTests */,

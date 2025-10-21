@@ -31,6 +31,7 @@ struct HabitEditView: View {
                 Section("Habit Details") {
                     TextField("Habit name", text: $habitTitle)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .accessibilityIdentifier("habitNameField")
                 }
                 
                 Section("Reminder Settings") {
@@ -55,6 +56,7 @@ struct HabitEditView: View {
                     Button("Save") {
                         saveHabit()
                     }
+                    .accessibilityIdentifier("saveHabitButton")
                     .disabled(habitTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
