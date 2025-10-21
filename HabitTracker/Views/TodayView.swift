@@ -20,6 +20,9 @@ struct TodayView: View {
     @StateObject private var dataManager = SharedDataManager.shared
     @State private var showNew = false
 
+    @State private var showEdit = false
+    @State private var editingHabit: Habit?
+    
     var body: some View {
         NavigationStack {
             VStack {
@@ -43,8 +46,22 @@ struct TodayView: View {
                     List {
                         ForEach(habits) { habit in
                             HabitRow(habit: habit)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        delete(habit)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+
+                                    Button {
+                                        editingHabit = habit
+                                        showEdit = true
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    .tint(.yellow)
+                                }
                         }
-                        .onDelete(perform: deleteHabit)
                     }
                 }
             }
@@ -58,19 +75,19 @@ struct TodayView: View {
                 }
             }
             .sheet(isPresented: $showNew) {
-                NavigationStack {
-                    HabitEditView()
+                NavigationStack { HabitEditView() }
+            }
+            .sheet(isPresented: $showEdit) {
+                if let habit = editingHabit {
+                    NavigationStack { HabitEditView(habit: habit) }
                 }
             }
         }
     }
 
-    private func deleteHabit(at offsets: IndexSet) {
+    private func delete(_ habit: Habit) {
         withAnimation {
-            offsets.map { habits[$0] }.forEach { habit in
-                // Archive instead of delete
-                habit.isArchived = true
-            }
+            habit.isArchived = true
             try? ctx.save()
         }
     }
