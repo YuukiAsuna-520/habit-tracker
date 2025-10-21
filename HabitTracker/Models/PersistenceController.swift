@@ -21,7 +21,7 @@ struct PersistenceController {
     let container: NSPersistentContainer
 
     init(inMemory: Bool = false) {
-        container = NSPersistentContainer(name: "HabitTracker") // 必须与 .xcdatamodeld 文件名一致
+        container = NSPersistentContainer(name: "HabitTracker")
         
         // Configure for App Group sharing
         if container.persistentStoreDescriptions.first?.url != nil {

@@ -2,7 +2,7 @@
 //  HabitRow.swift
 //  HabitTracker
 //
-//  Created by Soorya Sanand on 15/10/2025.
+//  Created by Soorya Sanand and Tingxuan Zhang on 15/10/2025.
 //
 
 import SwiftUI
@@ -11,6 +11,8 @@ import CoreData
 struct HabitRow: View {
     @ObservedObject var habit: Habit
     @StateObject private var dataManager = SharedDataManager.shared
+    
+    @State private var checkScale: CGFloat = 1.0
     
     var body: some View {
         HStack {
@@ -21,6 +23,9 @@ struct HabitRow: View {
                 Image(systemName: isCompleted ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(isCompleted ? .green : .gray)
                     .font(.title2)
+                    .scaleEffect(checkScale)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: checkScale)
+                    .symbolEffect(.bounce, value: isCompleted)
             }
             .buttonStyle(PlainButtonStyle())
             
@@ -76,6 +81,15 @@ struct HabitRow: View {
             dataManager.markHabitIncomplete(habit)
         } else {
             dataManager.markHabitComplete(habit)
+
+            #if canImport(UIKit)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            #endif
+
+            checkScale = 1.2
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                checkScale = 1.0
+            }
         }
     }
 }
