@@ -2,102 +2,87 @@
 //  HabitTrackerWidget.swift
 //  HabitTrackerWidget
 //
-//  Created by grace cen on 20/10/2025.
+//  Created by grace cen on 21/10/2025.
 //
 
-//Adding Widget extension
 import WidgetKit
 import SwiftUI
 
-struct QuoteEntry: TimelineEntry {
-    let date: Date
-    let quote: String
-    let backgroundColor: Color
-}
-//getting quotes for each day
-struct QuoteProvider: TimelineProvider {
+struct Provider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> SimpleEntry {
+        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
+    }
 
-    let quotes = [
-        "Small steps every day can lead to big changes.",
-        "It does not matter how slowly you go as long as you do not stop.",
-        "Your habits define your future.",
-        "Do what you can, with what you have, where you are.",
-        "Don't forget to take things slow",
-        "It always seem impossible until it's done. ",
-        "Progress is about making small efforts daily"
-    ]
-    
-    let colors: [Color] = [.blue, .green, .purple, .orange, .red, .pink, .mint]
-    
-    func placeholder(in context: Context) -> QuoteEntry { QuoteEntry(date: Date(), quote: quotes[0], backgroundColor: colors[0])
+    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
+        SimpleEntry(date: Date(), configuration: configuration)
     }
     
-//    func entry(forDate date: Date, in context: Context) -> SimpleEntry {
-//        let randomIndex = Int.random(in: 0..<quotes.count)
-//        let randomColorIndex = Int.random(in: 0..<colors.count)
-//    }
-    func getSnapshot(in context: Context, completion: @escaping (QuoteEntry) -> Void) {
-        completion(placeholder(in: context))
-    }
-    func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<QuoteEntry>) -> Void) {
-        var entries: [QuoteEntry] = []
+    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
+        var entries: [SimpleEntry] = []
+
+        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
         let currentDate = Date()
-        
-        //generate one quote per day
-        
-        for dayOffset in 0 ..< 7 {
-            let entryDate = Calendar.current.date(byAdding: .day, value: dayOffset, to: currentDate)!
-            let midnight = Calendar.current.startOfDay(for: entryDate)
-            
-            //use quote selection based on day
-            let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: midnight) ?? 0
-            let quote = quotes[dayOfYear % quotes.count]
-            let color = colors[dayOfYear % colors.count]
-            //entry of quotes at midnight
-            let entry = QuoteEntry(date: midnight, quote: quote, backgroundColor: color)
+        for hourOffset in 0 ..< 5 {
+            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
+            let entry = SimpleEntry(date: entryDate, configuration: configuration)
             entries.append(entry)
         }
-        
-        let timeline = Timeline(entries: entries, policy: .atEnd)
-        completion(timeline)
+
+        return Timeline(entries: entries, policy: .atEnd)
     }
-    
+
+//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
+//        // Generate a list containing the contexts this widget is relevant in.
+//    }
+}
+
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let configuration: ConfigurationAppIntent
 }
 
 struct HabitTrackerWidgetEntryView : View {
-    var entry: QuoteEntry
-    
+    var entry: Provider.Entry
+
     var body: some View {
-        ZStack {
-            
-            Text(entry.quote)
-                .font(.system(size: 15, weight: .bold, design: .serif))
-                .foregroundColor(.white)
-                .padding()
-            
-        }.containerBackground(for: .widget) {
-            LinearGradient(colors: [entry.backgroundColor.opacity(0.6), entry.backgroundColor], startPoint: .top, endPoint: .bottom).overlay(LinearGradient(colors: [.white.opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
+        VStack {
+            Text("Time:")
+            Text(entry.date, style: .time)
+
+            Text("Favorite Emoji:")
+            Text(entry.configuration.favoriteEmoji)
         }
     }
 }
+
 struct HabitTrackerWidget: Widget {
     let kind: String = "HabitTrackerWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: QuoteProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             HabitTrackerWidgetEntryView(entry: entry)
-            
+                .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Daily Motivation")
-        .description("Get inspired everyday with quotes")
-        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
+extension ConfigurationAppIntent {
+    fileprivate static var smiley: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.favoriteEmoji = "😀"
+        return intent
+    }
+    
+    fileprivate static var starEyes: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.favoriteEmoji = "🤩"
+        return intent
+    }
+}
 
 #Preview(as: .systemSmall) {
     HabitTrackerWidget()
 } timeline: {
-    QuoteEntry(date: .now, quote: "Small steps every day lead to big changes.", backgroundColor: .blue)
-    QuoteEntry(date: .now.addingTimeInterval(86400), quote: "Progress is about making small efforts daily", backgroundColor: .purple)
+    SimpleEntry(date: .now, configuration: .smiley)
+    SimpleEntry(date: .now, configuration: .starEyes)
 }
