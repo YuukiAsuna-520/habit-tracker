@@ -19,7 +19,7 @@ struct QuoteProvider: TimelineProvider {
 
     let quotes = [
         "Small steps every day can lead to big changes.",
-        "It does not matter how slowly you go as long as you do not stop.",
+        "It does not matter how slowly you go, don't stop.",
         "Your habits define your future.",
         "Do what you can, with what you have, where you are.",
         "Don't forget to take things slow",
@@ -32,10 +32,6 @@ struct QuoteProvider: TimelineProvider {
     func placeholder(in context: Context) -> QuoteEntry { QuoteEntry(date: Date(), quote: quotes[0], backgroundColor: colors[0])
     }
     
-//    func entry(forDate date: Date, in context: Context) -> SimpleEntry {
-//        let randomIndex = Int.random(in: 0..<quotes.count)
-//        let randomColorIndex = Int.random(in: 0..<colors.count)
-//    }
     func getSnapshot(in context: Context, completion: @escaping (QuoteEntry) -> Void) {
         completion(placeholder(in: context))
     }
@@ -93,7 +89,6 @@ struct HabitTrackerWidget: Widget {
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
-
 
 #Preview(as: .systemSmall) {
     HabitTrackerWidget()
