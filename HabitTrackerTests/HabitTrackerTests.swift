@@ -2,7 +2,7 @@
 //  HabitTrackerTests.swift
 //  HabitTrackerTests
 //
-//  Created by 黑白熊 on 15/10/2025.
+//  Created by Tingxuan Zhang on 15/10/2025.
 //
 
 import XCTest
