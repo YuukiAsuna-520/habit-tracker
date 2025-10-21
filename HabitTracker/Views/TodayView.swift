@@ -20,7 +20,6 @@ struct TodayView: View {
     @StateObject private var dataManager = SharedDataManager.shared
     @State private var showNew = false
 
-    @State private var showEdit = false
     @State private var editingHabit: Habit? = nil
     
     var body: some View {
@@ -55,7 +54,6 @@ struct TodayView: View {
 
                                     Button {
                                         editingHabit = habit
-                                        showEdit = true
                                     } label: {
                                         Label("Edit", systemImage: "pencil")
                                     }
@@ -77,9 +75,10 @@ struct TodayView: View {
             .sheet(isPresented: $showNew) {
                 NavigationStack { HabitEditView() }
             }
-            .sheet(isPresented: $showEdit) {
-                if let habit = editingHabit {
-                    NavigationStack { HabitEditView(habit: habit) }
+            .sheet(item: $editingHabit) { habit in
+                NavigationStack {
+                    HabitEditView(habit: habit)
+                        .environment(\.managedObjectContext, ctx)
                 }
             }
         }
