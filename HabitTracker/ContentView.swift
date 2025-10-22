@@ -4,6 +4,7 @@
 //
 //  Created by Yash Patil on 17/10/2025.
 //
+//This project was created by Soorya Sanand, Yash Patil, Tingxuan Zhang, Grace Cen.
 
 
 import SwiftUI
